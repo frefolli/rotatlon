@@ -18,31 +18,30 @@ inline float_t distance(V3& a, V3& b) {
 }
 
 inline float_t xy_angle(V3& a, V3& b) {
-  return atan((a.y - b.y) / (a.x - b.x));
+  return atan2((a.y - b.y), (a.x - b.x));
 }
 
-inline float_t yz_angle(V3& a, V3& b) {
-  return atan((a.z - b.z) / (a.y - b.y));
+inline float_t z_angle(V3& a, V3& b) {
+  return atan(sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2)));
 }
 
 inline float_t newton(Particle& a, Particle& b) {
   return (a.mass * b.mass) / pow(distance(a.position, b.position), 2);
 }
 
-inline void apply_force(Particle& a, Particle& b) {
+inline void apply_force(Particle& a, Particle& b, float_t f) {
   float_t phi = xy_angle(a.position, b.position);
-  float_t theta = yz_angle(a.position, b.position);
-  float_t f = newton(a, b);
-  
-  float_t f_a = f / a.mass;
-  a.speed.x += f_a * cos(phi) * sin(theta);
-  a.speed.y += f_a * sin(phi) * sin(theta);
-  a.speed.z += f_a * cos(theta);
 
-  float_t f_b = f / b.mass;
-  b.speed.x -= f_b * cos(phi) * sin(theta);
-  b.speed.y -= f_b * sin(phi) * sin(theta);
-  b.speed.z -= f_b * cos(theta);
+  float_t f_a = f / a.mass;
+  a.speed.x -= f_a * cos(phi);
+  a.speed.y -= f_a * sin(phi);
+  a.speed.z -= f_a * 0;
+}
+
+inline void apply_forces(Particle& a, Particle& b) {
+  float_t f = newton(a, b);
+  apply_force(a, b, f);
+  apply_force(b, a, f);
 }
 
 inline void move(Particle& a) {
@@ -52,21 +51,29 @@ inline void move(Particle& a) {
 }
 
 inline void UpdateParticles(Particle &a, Particle &b) {
-  apply_force(a, b);
+  apply_forces(a, b);
   move(a);
   move(b);
 }
 
-inline void DrawParticles(Particle &a, Particle &b) {
-  DrawCircle((int) a.position.x, (int) a.position.y, RADIUS, RED);
-  DrawCircle((int) b.position.x, (int) b.position.y, RADIUS, GREEN);
+inline void DrawParticles(Particle &a, Particle &b, bool trace) {
+  Color a_color = GREEN;
+  Color b_color = RED;
+  int radius = RADIUS;
+  if (trace) {
+    a_color = ORANGE;
+    b_color = LIME;
+    radius = 2;
+  }
+  DrawCircle((int) a.position.x, (int) a.position.y, radius, a_color);
+  DrawCircle((int) b.position.x, (int) b.position.y, radius, b_color);
 }
 
 int realMain(int argc, char** args) {
   // --------------------------------------------------------------------
   // INIT
-  Particle a = {200, {0,0,0}, {0,0,0}};
-  Particle b = {0.3, {-10,0,0}, {1,0,0}};
+  Particle a = {1000, {700,500,0}, {0,0,0}};
+  Particle b = {0.3, {200,200,0}, {1,0,0}};
   // --------------------------------------------------------------------
   // INIT WINDOW
   InitWindow(WIDTH, HEIGHT, "dioimperatoresalvini");
@@ -75,19 +82,20 @@ int realMain(int argc, char** args) {
   }
 
   SetTargetFPS(60);
+  BeginDrawing();
+  ClearBackground(WHITE);
+  EndDrawing();
   // --------------------------------------------------------------------
   // REL
   while (!WindowShouldClose()) {
+    BeginDrawing();
+    DrawParticles(a, b, true);
     if(IsKeyPressed(KEY_LEFT)) {
       PAUSED = !PAUSED;
     } else if (!PAUSED) {
       UpdateParticles(a, b);
     }
-    BeginDrawing();
-    ClearBackground(WHITE);
-    //
-    DrawParticles(a, b);
-    //
+    DrawParticles(a, b, false);
     EndDrawing();
   }
   // --------------------------------------------------------------------
