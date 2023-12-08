@@ -51,13 +51,11 @@ void ParseParticles(std::vector<Particle>& out, std::istream& in) {
       throw std::runtime_error("at line " + std::to_string(index_of_line) + ", invalid particle csv: " + line);
     }
     
-    Particle particle = {
-      mass,
-      {px, py, pz},
-      {sx, sy, sz},
-      radius,
-      detect_color(color)
-    };
+    Particle particle = newParticle(mass,
+                                    {px, py, pz},
+                                    {sx, sy, sz},
+                                    radius,
+                                    detect_color(color));
 
     out.push_back(particle);
     std::cout << particle << std::endl;
