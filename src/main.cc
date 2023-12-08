@@ -120,6 +120,7 @@ int realMain(size_t argc, char** args) {
     ParseParticles(particles, inputFile);
     inputFile.close();
   if (RANDOM) {
+    std::srand(std::time(nullptr));
     PopulateParticles(particles);
   }
 

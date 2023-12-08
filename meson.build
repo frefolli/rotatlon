@@ -1,5 +1,6 @@
 project('rotatlon', 'cpp', version: 'master')
 
+add_project_arguments('-O3',  language : 'cpp')
 include = include_directories('include')
 
 main = executable('main.exe', [
