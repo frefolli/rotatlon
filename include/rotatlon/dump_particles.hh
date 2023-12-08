@@ -6,6 +6,6 @@
 #include <vector>
 
 void DumpHeader(std::ostream& out);
-void DumpParticles(std::vector<Particle>& particles);
+void DumpParticles(std::ostream& out, std::vector<Particle>& particles);
 
 #endif

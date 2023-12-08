@@ -12,7 +12,7 @@ Particle newParticle(float_t mass,
         {0, 0, 0},
         radius,
         color
-    }
+    };
 }
 
 std::ostream& operator<<(std::ostream& out, Particle particle) {

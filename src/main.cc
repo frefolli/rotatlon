@@ -6,16 +6,22 @@
 #include <iostream>
 #include <cmath>
 #include <fstream>
+#include <string>
 
 #include <rotatlon/config.hh>
 #include <rotatlon/particle.hh>
 #include <rotatlon/update_particles.hh>
 #include <rotatlon/draw_particles.hh>
 #include <rotatlon/parse_particles.hh>
+#include <rotatlon/dump_particles.hh>
+#include <rotatlon/populate_particles.hh>
 
 bool PAUSED = false;
 bool NOX = false;
+bool RANDOM = false;
 size_t MAX_ITERATION = 100;
+std::string INPUT_FILE = "input.csv";
+std::string OUTPUT_FILE = "output.csv";
 
 void RaylibSetup() {
   if (!NOX) {
@@ -36,18 +42,14 @@ bool Cycle() {
   if (!NOX) {
     return !WindowShouldClose();
   }
+  if (iterations == 0)
+    std::cout << std::endl;
   iterations++;
+  std::cout << "\rRunning iteration " << iterations << " / " << MAX_ITERATION;
   return iterations < MAX_ITERATION;
 }
 
-void Update() {
-  if (!PAUSED) {
-    UpdateParticles(particles);
-    DumpParticles(outputFile, particles);
-  }
-}
-
-void RaylibUpdate() {
+void RaylibUpdate(std::vector<Particle>& particles) {
   if (!NOX) {
     if(IsKeyPressed(KEY_LEFT)) {
       PAUSED = !PAUSED;
@@ -64,23 +66,19 @@ void RaylibTearDown() {
   }
 }
 
-int realMain(int argc, char** args) {
+int realMain(size_t argc, char** args) {
   // --------------------------------------------------------------------
   // INIT
-  std::vector<Particle> particles;
-  if (argc < 2) {
-    throw std::runtime_error("expected an input particle csv FILE path");
-  }
-  if (argc < 3) {
-    throw std::runtime_error("expected an output trace csv FILE path");
-  }
-  size_t arg_i = 3;
+  size_t arg_i = 1;
   while (arg_i < argc) {
     std::string flag = args[arg_i];
     if (flag == "-nox") {
       NOX = true;
       arg_i++;
-    } else if (flag == "-iter") {
+    } else if (flag == "-rand") {
+      RANDOM = true;
+      arg_i++;
+    } else  if (flag == "-iter") {
       arg_i++;
       if (!(arg_i < argc)) {
         throw std::runtime_error("-iter expects a number");
@@ -88,29 +86,57 @@ int realMain(int argc, char** args) {
       flag = args[arg_i];
       MAX_ITERATION = std::stoi(flag);
       arg_i++;
+    } else if (flag == "-bound") {
+      arg_i++;
+      if (!(arg_i < argc)) {
+        throw std::runtime_error("-bound expects a number");
+      }
+      flag = args[arg_i];
+      BOUNDARY = std::stof(flag);
+      arg_i++;
+    } else if (flag == "-in") {
+      arg_i++;
+      if (!(arg_i < argc)) {
+        throw std::runtime_error("-in expects a file");
+      }
+      flag = args[arg_i];
+      INPUT_FILE = flag;
+      arg_i++;
+    } else if (flag == "-out") {
+      arg_i++;
+      if (!(arg_i < argc)) {
+        throw std::runtime_error("-out expects a file");
+      }
+      flag = args[arg_i];
+      OUTPUT_FILE = flag;
+      arg_i++;
     } else {
       throw std::runtime_error("unknown argument: " + flag);
     }
   }
 
-  std::ifstream inputFile (args[1]);
-  ParseParticles(particles, inputFile);
-  inputFile.close();
-
-  if (particles.size() < 1) {
-    throw std::runtime_error("no particles fed in " + std::string(args[1]));
+  std::vector<Particle> particles;
+    std::ifstream inputFile (INPUT_FILE);
+    ParseParticles(particles, inputFile);
+    inputFile.close();
+  if (RANDOM) {
+    PopulateParticles(particles);
   }
 
-  std::ofstream outputFile (args[2]);
+  std::ofstream outputFile (OUTPUT_FILE);
   DumpHeader(outputFile);
+  DumpParticles(outputFile, particles);
   // --------------------------------------------------------------------
   // INIT WINDOW
   RaylibSetup();
   // --------------------------------------------------------------------
   // REL
   while(Cycle()) {
-    Update();
-    RaylibUpdate();
+    if (!PAUSED) {
+      UpdateParticles(particles);
+      DumpParticles(outputFile, particles);
+    }
+    RaylibUpdate(particles);
   }
   // --------------------------------------------------------------------
   // DELETE
