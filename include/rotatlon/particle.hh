@@ -7,7 +7,7 @@
 #include <raylib.h>
 
 typedef struct {
-  float_t mass;
+  double mass;
   V3 position;
   V3 speed;
   V3 acceleration;
@@ -15,7 +15,7 @@ typedef struct {
   Color color;
 } Particle;
 
-Particle newParticle(float_t mass,
+Particle newParticle(double mass,
                      V3 position,
                      V3 speed,
                      int radius,

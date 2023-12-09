@@ -1,3 +1,4 @@
 #include <rotatlon/config.hh>
 
-float_t BOUNDARY = 6000;
+double BOUNDARY = 0;
+double DTIME = 1;

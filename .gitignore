@@ -1,3 +1,4 @@
 builddir
 .ipynb_checkpoints
 output.csv
+__pycache__

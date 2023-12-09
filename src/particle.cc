@@ -1,6 +1,6 @@
 #include <rotatlon/particle.hh>
 
-Particle newParticle(float_t mass,
+Particle newParticle(double mass,
                      V3 position,
                      V3 speed,
                      int radius,

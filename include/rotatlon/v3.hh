@@ -5,9 +5,9 @@
 #include <ostream>
 
 typedef struct {
-  float_t x;
-  float_t y;
-  float_t z;
+  double x;
+  double y;
+  double z;
 } V3;
 
 std::ostream& operator<<(std::ostream& out, V3 v3);

@@ -9,6 +9,8 @@ M0 = 2000
 
 n_planets = int((HEIGHT - Cy) / ORBITAL_DISTANCE)
 
+print(", ".join([ str(_) for _ in [M0, Cx, Cy, 0, 0, 0, 0, 7, "#ff0000ff" ] ]))
+
 for i in range(1, n_planets + 1):
     short_semiaxis = i * ORBITAL_DISTANCE
     long_semiaxis = short_semiaxis * 1.5
