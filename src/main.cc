@@ -25,32 +25,67 @@ std::string OUTPUT_FILE = "output.csv";
 
 void RaylibSetup() {
   if (!NOX) {
-    InitWindow(WIDTH, HEIGHT, "dioimperatoresalvini");
-    if (!IsWindowReady()) {
-      throw std::runtime_error("Unable to initialize window");
-    }
-
-    SetTargetFPS(TARGET_FPS);
-    BeginDrawing();
-    ClearBackground(WHITE);
-    EndDrawing();
   }
 }
 
-bool Cycle() {
-  static size_t iterations = 0;
-  if (!NOX) {
-    return !WindowShouldClose();
+void NoxWorkflow() {
+  std::vector<Particle> particles;
+    std::ifstream inputFile (INPUT_FILE);
+    ParseParticles(particles, inputFile);
+    inputFile.close();
+  if (RANDOM) {
+    std::srand(std::time(nullptr));
+    PopulateParticles(particles);
   }
-  if (iterations == 0)
-    std::cout << std::endl;
-  iterations++;
-  std::cout << "\rRunning iteration " << iterations << " / " << MAX_ITERATION;
-  return iterations < MAX_ITERATION;
+
+  size_t iterations = 0;
+  std::cout << std::endl;
+  
+  while(iterations < MAX_ITERATION) {
+    iterations++;
+    std::cout << "\rRunning iteration " << iterations << " / " << MAX_ITERATION;
+    UpdateParticles(particles);
+    DumpParticles(outputFile, particles);
+  }
+  outputFile.close();
 }
 
-void RaylibUpdate(std::vector<Particle>& particles) {
-  if (!NOX) {
+void XWorkflow() {
+  std::vector<Particle> particles;
+    std::ifstream inputFile (INPUT_FILE);
+    ParseParticles(particles, inputFile);
+    inputFile.close();
+  if (RANDOM) {
+    std::srand(std::time(nullptr));
+    PopulateParticles(particles);
+  }
+
+  InitWindow(WIDTH, HEIGHT, "dioimperatoresalvini");
+  if (!IsWindowReady()) {
+    throw std::runtime_error("Unable to initialize window");
+  }
+
+  SetTargetFPS(TARGET_FPS);
+  BeginDrawing();
+  ClearBackground(WHITE);
+  EndDrawing();
+
+  #ifdef MODE_3D
+  Camera3D camera = { 0 };
+  camera.position = (Vector3){ 0.0f, 0.0f, 0.0f };  // Camera position
+  camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };    // Camera looking at point
+  camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };        // Camera up vector (rotation towards target)
+  camera.fovy = 45.0f;                              // Camera field-of-view Y
+  camera.projection = CAMERA_PERSPECTIVE;           // Camera mode type
+  #else
+  Camera2D camera = { 0 };
+  camera.target = (Vector2){ 0.0f, 0.0f };
+  camera.offset = (Vector2){ WIDTH/2.0f, HEIGHT/2.0f };
+  camera.rotation = 0.0f;
+  camera.zoom = 1.0f;
+  #endif
+
+  while(!WindowShouldClose()) {
     if(IsKeyDown(KEY_LEFT)) {
       WINDOW_SHIFT_X -= 5;
     } else if(IsKeyDown(KEY_UP)) {
@@ -65,22 +100,28 @@ void RaylibUpdate(std::vector<Particle>& particles) {
       WINDOW_SHIFT_X = 0;
       WINDOW_SHIFT_Y = 0;
     }
+    if (!PAUSED) {
+      UpdateParticles(particles);
+    }
     BeginDrawing();
     ClearBackground(WHITE);
+    #ifdef MODE_3D
+      BeginMode3D(camera);
+    #else
+      BeginMode2D(camera);
+    #endif
     DrawParticles(particles);
+    #ifdef MODE_3D
+      EndMode3D(camera);
+    #else
+      EndMode2D(camera);
+    #endif
     EndDrawing();
   }
+  CloseWindow();
 }
 
-void RaylibTearDown() {
-  if (!NOX) {
-    CloseWindow();
-  }
-}
-
-int realMain(size_t argc, char** args) {
-  // --------------------------------------------------------------------
-  // INIT
+void readCLI(size_t argc, char** args) {
   size_t arg_i = 1;
   while (arg_i < argc) {
     std::string flag = args[arg_i];
@@ -137,44 +178,19 @@ int realMain(size_t argc, char** args) {
       throw std::runtime_error("unknown argument: " + flag);
     }
   }
-
-  std::vector<Particle> particles;
-    std::ifstream inputFile (INPUT_FILE);
-    ParseParticles(particles, inputFile);
-    inputFile.close();
-  if (RANDOM) {
-    std::srand(std::time(nullptr));
-    PopulateParticles(particles);
-  }
-
-  std::ofstream outputFile (OUTPUT_FILE);
-  DumpHeader(outputFile);
-  DumpParticles(outputFile, particles);
-  // --------------------------------------------------------------------
-  // INIT WINDOW
-  RaylibSetup();
-  // --------------------------------------------------------------------
-  // REL
-  while(Cycle()) {
-    if (!PAUSED) {
-      UpdateParticles(particles);
-      // DumpParticles(outputFile, particles);
-    }
-    RaylibUpdate(particles);
-  }
-  // --------------------------------------------------------------------
-  // DELETE
-  // --------------------------------------------------------------------
-  outputFile.close();
-  RaylibTearDown();
-  return 0;
 }
 
 int main(int argc, char** args) {
   const char* AC_RED = "\u001b[31m";
   const char* AC_RESET = "\u001b[0m";
   try {
-    return realMain(argc, args);
+    readCLI(argc, args);
+    if (NOX) {
+      NoxWorkflow();
+    } else {
+      XWorkflow();
+    }
+    return 0;
   } catch(std::exception& error) {
     std::printf("%sERROR:%s %s\n", AC_RED, AC_RESET, error.what());
     return 1;
