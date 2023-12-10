@@ -1,10 +1,14 @@
 #include <rotatlon/draw_particles.hh>
+#include <rotatlon/config.hh>
 #include <raylib.h>
 
 size_t FACTOR = 2;
 
 void DrawParticles(std::vector<Particle>& particles) {
   size_t length = particles.size();
-  for (size_t i = 0; i < length; i++)
-    DrawCircle((int) (particles[i].position.x / FACTOR), (int) (particles[i].position.y / FACTOR), (int) (particles[i].radius / FACTOR), particles[i].color);
+  for (size_t i = 0; i < length; i++) {
+    int x = (particles[i].position.x) - WINDOW_SHIFT_X;
+    int y = (particles[i].position.y) - WINDOW_SHIFT_Y;
+    DrawCircle(x, y, particles[i].radius, particles[i].color);
+  }
 }

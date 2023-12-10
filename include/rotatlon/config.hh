@@ -9,5 +9,7 @@ const size_t HEIGHT = 768;
 const size_t TARGET_FPS = 60;
 extern double BOUNDARY;
 extern double DTIME;
+extern size_t WINDOW_SHIFT_X;
+extern size_t WINDOW_SHIFT_Y;
 
 #endif

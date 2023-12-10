@@ -51,10 +51,22 @@ bool Cycle() {
 
 void RaylibUpdate(std::vector<Particle>& particles) {
   if (!NOX) {
-    if(IsKeyPressed(KEY_LEFT)) {
+    if(IsKeyDown(KEY_LEFT)) {
+      WINDOW_SHIFT_X -= 5;
+    } else if(IsKeyDown(KEY_UP)) {
+      WINDOW_SHIFT_Y -= 5;
+    } else if(IsKeyDown(KEY_RIGHT)) {
+      WINDOW_SHIFT_X += 5;
+    } else if(IsKeyDown(KEY_DOWN)) {
+      WINDOW_SHIFT_Y += 5;
+    } else if(IsKeyPressed(KEY_P)) {
       PAUSED = !PAUSED;
+    } else if(IsKeyPressed(KEY_C)) {
+      WINDOW_SHIFT_X = 0;
+      WINDOW_SHIFT_Y = 0;
     }
     BeginDrawing();
+    ClearBackground(WHITE);
     DrawParticles(particles);
     EndDrawing();
   }
@@ -75,6 +87,9 @@ int realMain(size_t argc, char** args) {
     if (flag == "-nox") {
       NOX = true;
       arg_i++;
+    } else if (flag == "-paused") {
+      PAUSED = true;
+      arg_i++;
     } else if (flag == "-rand") {
       RANDOM = true;
       arg_i++;
@@ -85,6 +100,14 @@ int realMain(size_t argc, char** args) {
       }
       flag = args[arg_i];
       MAX_ITERATION = std::stoi(flag);
+      arg_i++;
+    } else if (flag == "-delta") {
+      arg_i++;
+      if (!(arg_i < argc)) {
+        throw std::runtime_error("-delta expects a number");
+      }
+      flag = args[arg_i];
+      DTIME = std::stod(flag);
       arg_i++;
     } else if (flag == "-bound") {
       arg_i++;
@@ -135,7 +158,7 @@ int realMain(size_t argc, char** args) {
   while(Cycle()) {
     if (!PAUSED) {
       UpdateParticles(particles);
-      DumpParticles(outputFile, particles);
+      // DumpParticles(outputFile, particles);
     }
     RaylibUpdate(particles);
   }
