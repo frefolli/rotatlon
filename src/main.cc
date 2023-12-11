@@ -7,6 +7,7 @@
 #include <cmath>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <rotatlon/config.hh>
 #include <rotatlon/particle.hh>
@@ -16,13 +17,6 @@
 #include <rotatlon/dump_particles.hh>
 #include <rotatlon/populate_particles.hh>
 
-bool PAUSED = false;
-bool NOX = false;
-bool RANDOM = false;
-size_t MAX_ITERATION = 100;
-std::string INPUT_FILE = "input.csv";
-std::string OUTPUT_FILE = "output.csv";
-
 void RaylibSetup() {
   if (!NOX) {
   }
@@ -30,9 +24,9 @@ void RaylibSetup() {
 
 void NoxWorkflow() {
   std::vector<Particle> particles;
-    std::ifstream inputFile (INPUT_FILE);
-    ParseParticles(particles, inputFile);
-    inputFile.close();
+  std::ifstream inputFile (INPUT_FILE);
+  ParseParticles(particles, inputFile);
+  inputFile.close();
   if (RANDOM) {
     std::srand(std::time(nullptr));
     PopulateParticles(particles);
@@ -41,6 +35,9 @@ void NoxWorkflow() {
   size_t iterations = 0;
   std::cout << std::endl;
   
+  std::ofstream outputFile (OUTPUT_FILE);
+  DumpHeader(outputFile);
+  DumpParticles(outputFile, particles);
   while(iterations < MAX_ITERATION) {
     iterations++;
     std::cout << "\rRunning iteration " << iterations << " / " << MAX_ITERATION;
@@ -72,7 +69,7 @@ void XWorkflow() {
 
   #ifdef MODE_3D
   Camera3D camera = { 0 };
-  camera.position = (Vector3){ 0.0f, 0.0f, 0.0f };  // Camera position
+  camera.position = (Vector3){ 0.0f, 100.0f, 10.0f };    // Camera looking at point
   camera.target = (Vector3){ 0.0f, 0.0f, 0.0f };    // Camera looking at point
   camera.up = (Vector3){ 0.0f, 1.0f, 0.0f };        // Camera up vector (rotation towards target)
   camera.fovy = 45.0f;                              // Camera field-of-view Y
@@ -80,25 +77,88 @@ void XWorkflow() {
   #else
   Camera2D camera = { 0 };
   camera.target = (Vector2){ 0.0f, 0.0f };
-  camera.offset = (Vector2){ WIDTH/2.0f, HEIGHT/2.0f };
   camera.rotation = 0.0f;
   camera.zoom = 1.0f;
   #endif
 
   while(!WindowShouldClose()) {
     if(IsKeyDown(KEY_LEFT)) {
-      WINDOW_SHIFT_X -= 5;
-    } else if(IsKeyDown(KEY_UP)) {
-      WINDOW_SHIFT_Y -= 5;
-    } else if(IsKeyDown(KEY_RIGHT)) {
-      WINDOW_SHIFT_X += 5;
-    } else if(IsKeyDown(KEY_DOWN)) {
-      WINDOW_SHIFT_Y += 5;
-    } else if(IsKeyPressed(KEY_P)) {
+      if (IsKeyDown(KEY_RIGHT_SHIFT)) {
+        DTIME -= 0.1f;
+      } else {
+        #ifdef MODE_3D
+        camera.position.x -= 1;
+        camera.target.x -= 1;
+        #else
+        camera.target.x -= 5;
+        #endif
+      }
+    }
+    if(IsKeyDown(KEY_UP)) {
+      if (IsKeyDown(KEY_RIGHT_SHIFT)) {
+        #ifdef MODE_3D
+        camera.position.y -= 1;
+        #else
+        camera.zoom += 0.01f;
+        #endif
+      } else {
+        #ifdef MODE_3D
+        camera.position.z -= 1;
+        camera.target.z -= 1;
+        #else
+        camera.target.y -= 5;
+        #endif
+      }
+    }
+    if(IsKeyDown(KEY_RIGHT)) {
+      if (IsKeyDown(KEY_RIGHT_SHIFT)) {
+        DTIME += 0.1f;
+      } else {
+        #ifdef MODE_3D
+        camera.position.x += 1;
+        camera.target.x += 1;
+        #else
+        camera.target.x += 5;
+        #endif
+      }
+    }
+    if(IsKeyDown(KEY_DOWN)) {
+      if (IsKeyDown(KEY_RIGHT_SHIFT)) {
+        #ifdef MODE_3D
+        camera.position.y += 1;
+        #else
+        camera.zoom -= 0.01f;
+        #endif
+      } else {
+        #ifdef MODE_3D
+        camera.position.z += 1;
+        camera.target.z += 1;
+        #else
+        camera.target.y += 5;
+        #endif
+      }
+    }
+    if(IsKeyPressed(KEY_P)) {
       PAUSED = !PAUSED;
-    } else if(IsKeyPressed(KEY_C)) {
-      WINDOW_SHIFT_X = 0;
-      WINDOW_SHIFT_Y = 0;
+    }
+    if(IsKeyPressed(KEY_Z)) {
+      #ifdef MODE_3D
+      #else
+      camera.zoom = 1;
+      #endif
+    }
+    if(IsKeyPressed(KEY_X)) {
+      DTIME = 1;
+    }
+    if(IsKeyPressed(KEY_C)) {
+      camera.target.x = 0;
+      camera.target.y = 0;
+      #ifdef MODE_3D
+      camera.target.z = 0;
+      camera.position.x = 0;
+      camera.position.y = 10;
+      camera.position.z = 10;
+      #endif
     }
     if (!PAUSED) {
       UpdateParticles(particles);
@@ -112,9 +172,10 @@ void XWorkflow() {
     #endif
     DrawParticles(particles);
     #ifdef MODE_3D
-      EndMode3D(camera);
+      DrawGrid(10, 1.0f);
+      EndMode3D();
     #else
-      EndMode2D(camera);
+      EndMode2D();
     #endif
     EndDrawing();
   }

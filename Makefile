@@ -2,7 +2,7 @@ EXE=./builddir/main.exe
 
 @all: ${EXE}
 
-${EXE}: src/*.cc
+${EXE}: include/rotatlon/*.hh src/*.cc
 	meson setup builddir
 	ninja -C builddir
 
